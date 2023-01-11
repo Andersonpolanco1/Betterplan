@@ -1,4 +1,5 @@
 using BetterplanAPI.Data;
+using BetterplanAPI.Data.Abstract;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -9,6 +10,9 @@ builder.Services.AddControllers()
 
 builder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseNpgsql(
     builder.Configuration.GetConnectionString("DefaultConnectionString")));
+
+builder.Services.AddTransient<IUsersRepository, UsersRepository>();
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

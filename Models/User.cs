@@ -27,5 +27,10 @@ namespace BetterplanAPI.Models
         public virtual ICollection<Goaltransactionfunding> Goaltransactionfundings { get; set; }
         public virtual ICollection<Goaltransaction> Goaltransactions { get; set; }
         public virtual ICollection<User> InverseAdvisor { get; set; }
+
+        public string FullName
+        {
+            get { return Firstname + " " + Surname; }
+        }
     }
 }

@@ -5,6 +5,10 @@ namespace BetterplanAPI.Data.Abstract
 {
     public interface IUsersRepository
     {
-        Task<UserDto?> GetById(int id);
+        Task<UserDto?> GetUserById(int id);
+
+        Task<UserSummaryDto?> GetSummaryByUserId(int id);
+
+        Task<IEnumerable<UserGoalDto?>> GetGoalsByUserId(int userId);
     }
 }

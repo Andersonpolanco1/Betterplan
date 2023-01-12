@@ -2,6 +2,7 @@
 using BetterplanAPI.Data.DTO;
 using BetterplanAPI.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace BetterplanAPI.Data
 {
@@ -51,8 +52,41 @@ namespace BetterplanAPI.Data
                     Created = g.Created,
                     Portfolio = g.Portfolio
                 }).ToListAsync();
+        }
+
+        public UserGoalDetailDto? GetGoalDetailsByUserId(int userId, int goalId)
+        {
+            var goalDetail =  _context.Goals.AsNoTracking()
+                .Include(g => g.Goalcategory)
+                .Include(g => g.Financialentity)
+                .Where(g => g.Userid == userId && g.Id == goalId)
+                .Select(g => new UserGoalDetailDto
+                {
+                    Title = g.Title,
+                    Years = g.Years,
+                    Initialinvestment = g.Initialinvestment,
+                    Monthlycontribution = g.Monthlycontribution,
+                    Targetamount = g.Targetamount,
+                    Financialentity = g.Financialentity.Title,
+                    GoalcategoryName = g.Goalcategory.Title
+                }).FirstOrDefault();
+
+            if (goalDetail is null)
+                return null;
+
+            var transactions = GetGoalTransactions(goalId);
+
+            goalDetail.GoaltransactionsTotalBuyAmount = transactions.Where(x => x.Type == "buy").Select(x => x.Amount).Sum();
+            goalDetail.GoaltransactionsTotalSaleAmount = transactions.Where(x => x.Type == "sale").Select(x => x.Amount).Sum();
 
 
+            return goalDetail;
+
+        }
+
+        private IEnumerable<Goaltransaction> GetGoalTransactions(int goalId)
+        {
+            return _context.Goaltransactions.AsNoTracking().Where(g => g.Goalid == goalId).ToList();
         }
     }
 }

@@ -10,5 +10,7 @@ namespace BetterplanAPI.Data.Abstract
         Task<UserSummaryDto?> GetSummaryByUserId(int id);
 
         Task<IEnumerable<UserGoalDto?>> GetGoalsByUserId(int userId);
+
+        UserGoalDetailDto? GetGoalDetailsByUserId(int userId, int goalId);
     }
 }

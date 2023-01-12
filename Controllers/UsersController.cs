@@ -37,9 +37,17 @@ namespace BetterplanAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetGoalsByUserId(int id)
         {
-            var goals = await _usersRepository.GetGoalsByUserId(id);
+            return Ok(await _usersRepository.GetGoalsByUserId(id));
+        }
 
-            return Ok(goals);
+
+        [Route("{id}/goals/{goalId}")]
+        [HttpGet]
+        public IActionResult GetGoalDetailsByUserId(int id, int goalId)
+        {
+            var goalDetails = _usersRepository.GetGoalDetailsByUserId(id, goalId);
+            return goalDetails is null ? NotFound() : Ok(goalDetails);
+
         }
     }
 }

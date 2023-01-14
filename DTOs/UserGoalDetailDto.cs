@@ -1,6 +1,6 @@
 ﻿using BetterplanAPI.Models;
 
-namespace BetterplanAPI.Data.DTO
+namespace BetterplanAPI.DTOs
 {
     public class UserGoalDetailDto : BaseGoalDto
     {

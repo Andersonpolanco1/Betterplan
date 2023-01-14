@@ -36,5 +36,6 @@ namespace BetterplanAPI.Models
         public virtual ICollection<Goal> Goals { get; set; }
         public virtual ICollection<Portfoliocomposition> Portfoliocompositions { get; set; }
         public virtual ICollection<Portfoliofunding> Portfoliofundings { get; set; }
+
     }
 }

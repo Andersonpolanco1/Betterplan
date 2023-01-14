@@ -1,4 +1,4 @@
-﻿namespace BetterplanAPI.Data.DTO
+﻿namespace BetterplanAPI.DTOs
 {
     public class UserDto
     {

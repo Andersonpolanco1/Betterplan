@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using BetterplanAPI.Models;
+using BetterplanAPI.DTOs;
 
 namespace BetterplanAPI.Data
 {
@@ -36,6 +37,8 @@ namespace BetterplanAPI.Data
         public virtual DbSet<Portfoliofunding> Portfoliofundings { get; set; } = null!;
         public virtual DbSet<Risklevel> Risklevels { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
+        public virtual DbSet<UserBalanceDto> UserBalanceDtos { get; set; } = null!;
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

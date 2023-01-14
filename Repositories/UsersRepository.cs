@@ -4,8 +4,6 @@ using BetterplanAPI.Data.Abstract;
 using BetterplanAPI.DTOs;
 using BetterplanAPI.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using System.Reflection.Metadata;
 
 namespace BetterplanAPI.Repositories
 {
@@ -77,6 +75,9 @@ namespace BetterplanAPI.Repositories
             return goalDetailDto;
 
         }
+
+
+
         /// <summary>
         /// Gets the balance by the Id of a user or by the Id of a goal
         /// </summary>

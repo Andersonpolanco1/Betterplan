@@ -26,6 +26,9 @@ namespace BetterplanAPI.Profiles
 
             .ForMember(destination => destination.GoalcategoryName,
                 options => options.MapFrom(source => source.Goalcategory.Title));
+
+
+            CreateMap<Portfolio, PortfolioDto>();
         }
     }
 

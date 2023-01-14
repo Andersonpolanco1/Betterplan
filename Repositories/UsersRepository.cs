@@ -4,6 +4,7 @@ using BetterplanAPI.DTOs;
 using BetterplanAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.Reflection.Metadata;
 
 namespace BetterplanAPI.Repositories
 {
@@ -27,15 +28,15 @@ namespace BetterplanAPI.Repositories
 
         public async Task<UserSummaryDto?> GetUserSummaryByUserIdAsync(int userId)
         {
-            double balance = await GetBalanceByUserIdAsync(userId);
+            double balance = await GetBalanceByGoalIdOrOwnerId(userId,false);
 
-            double CurrentContributions = _context.Goaltransactions
+            double currentContributions = _context.Goaltransactions
                 .Where(g => g.Ownerid == userId)
                 .Select(x => x.Amount ?? 0d)
                 .ToList()
                 .Sum();
 
-            return new UserSummaryDto { Balance = balance, CurrentContributions = CurrentContributions };
+            return new UserSummaryDto { Balance = balance, CurrentContributions = currentContributions };
         }
 
         public async Task<IEnumerable<UserGoalDto?>> GetUserGoalsByUserIdAsync(int userId)
@@ -77,18 +78,25 @@ namespace BetterplanAPI.Repositories
             if (goalDetail is null)
                 return null;
 
+            var goalBalance = await GetBalanceByGoalIdOrOwnerId(goalId, true);
+            goalDetail.GoalPercentage = (goalBalance / goalDetail.Targetamount) * 100;
+
             var transactions = await _context.Goaltransactions.AsNoTracking().Where(g => g.Goalid == goalId).ToListAsync();
 
-            goalDetail.GoaltransactionsTotalBuyAmount = transactions.Where(x => x.Type == "buy").Select(x => x.Amount).Sum();
-            goalDetail.GoaltransactionsTotalSaleAmount = transactions.Where(x => x.Type == "sale").Select(x => x.Amount).Sum();
+            goalDetail.TotalContributions = transactions.Where(x => x.Type == "buy").Select(x => x.Amount).Sum();
+            goalDetail.Totalwithdrawals = transactions.Where(x => x.Type == "sale").Select(x => x.Amount).Sum();
 
 
             return goalDetail;
 
         }
-
-
-        private async Task<double> GetBalanceByUserIdAsync(int userId)
+        /// <summary>
+        /// Gets the balance by the Id of a user or by the Id of a goal
+        /// </summary>
+        /// <param name="parameterId">UserId or GoalId of GoalTransaction entity. </param>
+        /// <param name="isGoal">true for get balance by goalId, false for get balance by ownerId.</param>
+        /// <returns></returns>
+        private async Task<double> GetBalanceByGoalIdOrOwnerId(int parameterId, bool isGoal)
         {
             var goalTransactions = _context.Goaltransactionfundings.AsQueryable();
             var fundingShareValues = _context.Fundingsharevalues.AsQueryable();
@@ -96,23 +104,23 @@ namespace BetterplanAPI.Repositories
             var fundings = _context.Fundings.AsQueryable();
             var users = _context.Users.AsQueryable();
 
-            var totalTransactionsBalance = 
+            var totalTransactionsBalance =
                 from goalTransaction in goalTransactions
-                join funding in fundings 
+                join funding in fundings
                     on goalTransaction.Fundingid equals funding.Id
-                join fundingShareValue in fundingShareValues 
-                    on new { fu = funding.Id, da = goalTransaction.Date } 
-                    equals new { fu = fundingShareValue.Fundingid, da = fundingShareValue.Date } 
+                join fundingShareValue in fundingShareValues
+                    on new { fu = funding.Id, da = goalTransaction.Date }
+                    equals new { fu = fundingShareValue.Fundingid, da = fundingShareValue.Date }
                     into fs
                 from fundingshare in fs.DefaultIfEmpty()
-                join user in users 
+                join user in users
                     on goalTransaction.Ownerid equals user.Id
-                join currencyIndicator in currencyIndicators 
-                    on new { sid = user.Currencyid.Value, did = funding.Currencyid.Value, d = goalTransaction.Date } 
-                    equals new { sid = currencyIndicator.Sourcecurrencyid, did = currencyIndicator.Destinationcurrencyid, d = currencyIndicator.Date } 
+                join currencyIndicator in currencyIndicators
+                    on new { sid = user.Currencyid.Value, did = funding.Currencyid.Value, d = goalTransaction.Date }
+                    equals new { sid = currencyIndicator.Sourcecurrencyid, did = currencyIndicator.Destinationcurrencyid, d = currencyIndicator.Date }
                     into cis
-                from ci in cis.DefaultIfEmpty()
-                where goalTransaction.Ownerid == userId
+                from ci in cis.DefaultIfEmpty()            
+                where isGoal ? goalTransaction.Goalid == parameterId : goalTransaction.Ownerid == parameterId
                 select new TransactionBalance { Goaltransactionfunding = goalTransaction, Currencyindicator = ci, Fundingsharevalue = fundingshare }
                 .GetBalance();
 

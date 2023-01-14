@@ -19,7 +19,7 @@ namespace BetterplanAPI.Controllers
 
         [Route("{id}")]
         [HttpGet]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetByIdAsync(int id)
         {
             var user = await _usersRepository.GetUserByIdAsync(id);
             return user is null ? NotFound() : Ok(user);
@@ -27,7 +27,7 @@ namespace BetterplanAPI.Controllers
 
         [Route("{id}/summary")]
         [HttpGet]
-        public async Task<IActionResult> GetUserSummary(int id)
+        public async Task<IActionResult> GetUserSummaryAsync(int id)
         {
             var summary = await _usersRepository.GetUserSummaryByUserIdAsync(id);
             return summary is null ? NotFound() : Ok(summary);
@@ -35,7 +35,7 @@ namespace BetterplanAPI.Controllers
 
         [Route("{id}/goals")]
         [HttpGet]
-        public async Task<IActionResult> GetGoalsByUserId(int id)
+        public async Task<IActionResult> GetGoalsByUserIdAsync(int id)
         {
             return Ok(await _usersRepository.GetUserGoalsByUserIdAsync(id));
         }
@@ -43,7 +43,7 @@ namespace BetterplanAPI.Controllers
 
         [Route("{id}/goals/{goalId}")]
         [HttpGet]
-        public async Task<IActionResult> GetGoalDetailsByUserId(int id, int goalId)
+        public async Task<IActionResult> GetGoalDetailsByUserIdAsync(int id, int goalId)
         {
             var goalDetails = await _usersRepository.GetUserGoalDetailsByUserIdAsync(id, goalId);
             return goalDetails is null ? NotFound() : Ok(goalDetails);

@@ -13,10 +13,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt => opt.UseNpgsql(
     builder.Configuration.GetConnectionString("DefaultConnectionString")));
 
 builder.Services.AddTransient<IUsersRepository, UsersRepository>();
-
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();
 

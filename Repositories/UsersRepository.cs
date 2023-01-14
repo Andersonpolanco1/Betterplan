@@ -1,4 +1,5 @@
-﻿using BetterplanAPI.Data;
+﻿using AutoMapper;
+using BetterplanAPI.Data;
 using BetterplanAPI.Data.Abstract;
 using BetterplanAPI.DTOs;
 using BetterplanAPI.Models;
@@ -11,19 +12,20 @@ namespace BetterplanAPI.Repositories
     public class UsersRepository : IUsersRepository
     {
         private readonly ApplicationDbContext _context;
-
-        public UsersRepository(ApplicationDbContext context)
+        private readonly IMapper _mapper;
+        public UsersRepository(ApplicationDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<UserDto?> GetUserByIdAsync(int userId)
         {
-            return await _context.Users.AsNoTracking()
-                .Include(u => u.InverseAdvisor)
-                .Select(u => new UserDto { Id = u.Id, UserFullName = u.FullName, AdvisorFullName = u.Advisor.FullName, Created = u.Created })
-                .FirstOrDefaultAsync(u => u.Id == userId)
-                ;
+            var user = await _context.Users.AsNoTracking()
+                .Include(u => u.Advisor)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            return _mapper.Map<UserDto>(user);
         }
 
         public async Task<UserSummaryDto?> GetUserSummaryByUserIdAsync(int userId)
@@ -41,21 +43,13 @@ namespace BetterplanAPI.Repositories
 
         public async Task<IEnumerable<UserGoalDto?>> GetUserGoalsByUserIdAsync(int userId)
         {
-            return await _context.Goals.AsNoTracking()
+            var userGoals =  await _context.Goals.AsNoTracking()
                 .Include(g => g.Portfolio)
                 .Include(g => g.Financialentity)
                 .Where(g => g.Userid == userId)
-                .Select(g => new UserGoalDto
-                {
-                    Title = g.Title,
-                    Years = g.Years,
-                    Initialinvestment = g.Initialinvestment,
-                    Monthlycontribution = g.Monthlycontribution,
-                    Targetamount = g.Targetamount,
-                    Financialentity = g.Financialentity.Title,
-                    Created = g.Created,
-                    Portfolio = g.Portfolio
-                }).ToListAsync();
+                .ToListAsync();
+
+            return _mapper.Map<IEnumerable<UserGoalDto>>(userGoals);
         }
 
         public async Task<UserGoalDetailDto?> GetUserGoalDetailsByUserIdAsync(int userId, int goalId)
@@ -64,30 +58,23 @@ namespace BetterplanAPI.Repositories
                 .Include(g => g.Goalcategory)
                 .Include(g => g.Financialentity)
                 .Where(g => g.Userid == userId && g.Id == goalId)
-                .Select(g => new UserGoalDetailDto
-                {
-                    Title = g.Title,
-                    Years = g.Years,
-                    Initialinvestment = g.Initialinvestment,
-                    Monthlycontribution = g.Monthlycontribution,
-                    Targetamount = g.Targetamount,
-                    Financialentity = g.Financialentity.Title,
-                    GoalcategoryName = g.Goalcategory.Title
-                }).FirstOrDefaultAsync();
+                .FirstOrDefaultAsync();
 
             if (goalDetail is null)
                 return null;
 
+            var goalDetailDto = _mapper.Map<UserGoalDetailDto>(goalDetail);
+
             var goalBalance = await GetBalanceByGoalIdOrOwnerId(goalId, true);
-            goalDetail.GoalPercentage = (goalBalance / goalDetail.Targetamount) * 100;
+            goalDetailDto.GoalPercentage = (goalBalance / goalDetail.Targetamount) * 100;
 
             var transactions = await _context.Goaltransactions.AsNoTracking().Where(g => g.Goalid == goalId).ToListAsync();
 
-            goalDetail.TotalContributions = transactions.Where(x => x.Type == "buy").Select(x => x.Amount).Sum();
-            goalDetail.Totalwithdrawals = transactions.Where(x => x.Type == "sale").Select(x => x.Amount).Sum();
+            goalDetailDto.TotalContributions = transactions.Where(x => x.Type == "buy").Select(x => x.Amount).Sum();
+            goalDetailDto.Totalwithdrawals = transactions.Where(x => x.Type == "sale").Select(x => x.Amount).Sum();
 
 
-            return goalDetail;
+            return goalDetailDto;
 
         }
         /// <summary>

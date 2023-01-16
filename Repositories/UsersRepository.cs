@@ -10,23 +10,19 @@ namespace BetterplanAPI.Repositories
     public class UsersRepository : IUsersRepository
     {
         private readonly ApplicationDbContext _context;
-        private readonly IMapper _mapper;
-        public UsersRepository(ApplicationDbContext context, IMapper mapper)
+        public UsersRepository(ApplicationDbContext context)
         {
             _context = context;
-            _mapper = mapper;
         }
 
-        public async Task<UserDto?> GetUserByIdAsync(int userId)
+        public async Task<User?> GetUserByIdAsync(int userId)
         {
-            var user = await _context.Users.AsNoTracking()
+            return await _context.Users.AsNoTracking()
                 .Include(u => u.Advisor)
                 .FirstOrDefaultAsync(u => u.Id == userId);
-
-            return _mapper.Map<UserDto>(user);
         }
 
-        public async Task<UserSummaryDto?> GetUserSummaryByUserIdAsync(int userId)
+        public async Task<UserSummaryDto> GetUserSummaryByUserIdAsync(int userId)
         {
             double balance = await GetBalanceByGoalIdOrOwnerId(userId,false);
 
@@ -39,52 +35,30 @@ namespace BetterplanAPI.Repositories
             return new UserSummaryDto { Balance = balance, CurrentContributions = currentContributions };
         }
 
-        public async Task<IEnumerable<UserGoalDto?>> GetUserGoalsByUserIdAsync(int userId)
+        public async Task<IEnumerable<Goal?>> GetUserGoalsByUserIdAsync(int userId)
         {
-            var userGoals =  await _context.Goals.AsNoTracking()
+            return  await _context.Goals.AsNoTracking()
                 .Include(g => g.Portfolio)
                 .Include(g => g.Financialentity)
                 .Where(g => g.Userid == userId)
                 .ToListAsync();
-
-            return _mapper.Map<IEnumerable<UserGoalDto>>(userGoals);
         }
 
-        public async Task<UserGoalDetailDto?> GetUserGoalDetailsByUserIdAsync(int userId, int goalId)
+        public async Task<Goal?> GetUserGoalByGoalIdAsync(int goalId)
         {
-            var goalDetail = await  _context.Goals.AsNoTracking()
+            return await  _context.Goals.AsNoTracking()
                 .Include(g => g.Goalcategory)
                 .Include(g => g.Financialentity)
-                .Where(g => g.Userid == userId && g.Id == goalId)
+                .Where(g => g.Id == goalId)
                 .FirstOrDefaultAsync();
-
-            if (goalDetail is null)
-                return null;
-
-            var goalDetailDto = _mapper.Map<UserGoalDetailDto>(goalDetail);
-
-            var goalBalance = await GetBalanceByGoalIdOrOwnerId(goalId, true);
-            goalDetailDto.GoalPercentage = (goalBalance / goalDetail.Targetamount) * 100;
-
-            var transactions = await _context.Goaltransactions.AsNoTracking().Where(g => g.Goalid == goalId).ToListAsync();
-
-            goalDetailDto.TotalContributions = transactions.Where(x => x.Type == "buy").Select(x => x.Amount).Sum();
-            goalDetailDto.Totalwithdrawals = transactions.Where(x => x.Type == "sale").Select(x => x.Amount).Sum();
-
-
-            return goalDetailDto;
-
         }
 
+        public async Task<IEnumerable<Goaltransaction>>GetTransactionsByGoalIdAsync(int goalId)
+        {
+            return await _context.Goaltransactions.AsNoTracking().Where(g => g.Goalid == goalId).ToListAsync();
+        }
 
-
-        /// <summary>
-        /// Gets the balance by the Id of a user or by the Id of a goal
-        /// </summary>
-        /// <param name="parameterId">UserId or GoalId of GoalTransaction entity. </param>
-        /// <param name="isGoal">true for get balance by goalId, false for get balance by ownerId.</param>
-        /// <returns></returns>
-        private async Task<double> GetBalanceByGoalIdOrOwnerId(int parameterId, bool isGoal)
+        public async Task<double> GetBalanceByGoalIdOrOwnerId(int parameterId, bool isGoal)
         {
             var goalTransactions = _context.Goaltransactionfundings.AsQueryable();
             var fundingShareValues = _context.Fundingsharevalues.AsQueryable();
@@ -116,5 +90,7 @@ namespace BetterplanAPI.Repositories
 
             return balances.Sum();
         }
+
+        public bool UserExists(int userId) =>  _context.Users.Any(u => u.Id == userId);
     }
 }

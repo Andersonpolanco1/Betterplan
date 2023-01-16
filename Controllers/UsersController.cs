@@ -47,7 +47,8 @@ namespace BetterplanAPI.Controllers
             if (!_usersRepository.UserExists(id))
                 return NotFound();
 
-            return Ok(await _usersRepository.GetUserGoalsByUserIdAsync(id));
+            var userGoals = await _usersRepository.GetUserGoalsByUserIdAsync(id);
+            return Ok(_mapper.Map<IEnumerable<UserGoalDto>>(userGoals));
         }
 
 
